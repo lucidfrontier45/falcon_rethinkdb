@@ -12,7 +12,7 @@ install_requires = [
 
 setup(
     name='falcon_rethinkdb',
-    version='0.1.1',
+    version='0.1.3',
     packages=['falcon_rethinkdb'],
     url='https://github.com/lucidfrontier45/falcon_rethinkdb',
     license='Apache License version 2',
