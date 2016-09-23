@@ -6,7 +6,7 @@ from jsonschema.exceptions import ValidationError
 
 
 def require_json(req, resp, resource, params):
-    if req.method in ('POST', 'PUT'):
+    if req.method in ('POST', 'PUT', 'PATCH'):
         if 'application/json' not in req.content_type:
             raise falcon.HTTPUnsupportedMediaType(
                 'This API only supports requests encoded as JSON.',
