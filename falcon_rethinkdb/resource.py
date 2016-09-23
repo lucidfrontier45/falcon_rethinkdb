@@ -1,15 +1,14 @@
-from typing import Union, List, Dict, Any
-
 import falcon
-from falcon import Request, Response
 import rethinkdb as r
-from .util import RethinkDBMixin, parse_rethinkdb_url
+from falcon import Request, Response
+
 from . import hooks
 from .types import JSONType
+from .util import RethinkDBMixin, parse_rethinkdb_url
 
 
-def _put_json(req: Request, item: JSONType):
-    req.context["result"] = item
+def put_json_to_context(req: Request, item: JSONType, key="result"):
+    req.context[key] = item
 
 
 class _RethinkDBResource(RethinkDBMixin):
@@ -42,13 +41,14 @@ class _RethinkDBResource(RethinkDBMixin):
 class RethinkDBRootResource(_RethinkDBResource):
     def on_get(self, req: Request, res: Response):
         items = self.list_items(self.conn)
-        _put_json(req, items)
+        put_json_to_context(req, items)
 
     @falcon.before(hooks.require_json)
     @falcon.before(hooks.parse_json)
     @falcon.before(hooks.validate_json)
     def on_post(self, req: Request, res: Response):
-        self.post_item(req.context["doc"], self.conn)
+        item_id = self.post_item(req.context["doc"], self.conn)
+        put_json_to_context(req, {"created": item_id})
 
 
 @falcon.after(hooks.dump_json)
@@ -57,18 +57,23 @@ class RethinkDBItemResource(_RethinkDBResource):
         item = self.get_item(item_id, self.conn)
         if item is None:
             raise falcon.HTTPNotFound()
-        _put_json(req, item)
+        put_json_to_context(req, item)
 
     @falcon.before(hooks.require_json)
     @falcon.before(hooks.parse_json)
     @falcon.before(hooks.validate_json)
     def on_put(self, req: Request, res: Response, item_id):
         self.put_item(item_id, req.context["doc"], self.conn)
+        put_json_to_context(req, {"created": item_id})
 
     @falcon.before(hooks.require_json)
     @falcon.before(hooks.parse_json)
     def on_patch(self, req: Request, res: Response, item_id):
-        self.update_item(item_id, req.context["doc"], self.conn)
+        ok = self.update_item(item_id, req.context["doc"], self.conn)
+        if not ok:
+            raise falcon.HTTPNotFound()
 
     def on_delete(self, req: Request, res: Response, item_id):
-        self.delete_item(item_id, self.conn)
+        ok = self.delete_item(item_id, self.conn)
+        if not ok:
+            raise falcon.HTTPNotFound()

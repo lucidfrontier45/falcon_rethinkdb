@@ -73,12 +73,17 @@ class RethinkDBMixin(object):
         generated_key = result["generated_keys"][0]
         return generated_key
 
-    def put_item(self, item_id: IDType, item: ItemType, conn: r.Connection):
+    def put_item(self, item_id: IDType, item: ItemType, conn: r.Connection) -> IDType:
         item[self._primary_key] = item_id
-        return self.get_table().insert(item, conflict="replace").run(conn)
+        self.get_table().insert(item, conflict="replace").run(conn)
+        return item_id
 
-    def update_item(self, item_id: IDType, partial_body: ItemType, conn: r.Connection):
-        return self.get_table().get(item_id).update(partial_body).run(conn)
+    def update_item(self, item_id: IDType, partial_body: ItemType, conn: r.Connection) -> bool:
+        result = self.get_table().get(item_id).update(partial_body).run(conn)
+        ok = result["skipped"] == 0
+        return ok
 
-    def delete_item(self, item_id: IDType, conn: r.Connection):
-        return self.get_table().get(item_id).delete().run(conn)
+    def delete_item(self, item_id: IDType, conn: r.Connection) -> bool:
+        result = self.get_table().get(item_id).delete().run(conn)
+        ok = result["deleted"] == 1
+        return ok
