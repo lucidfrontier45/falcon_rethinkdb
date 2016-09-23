@@ -6,8 +6,8 @@ from jsonschema.exceptions import ValidationError
 
 
 def require_json(req, resp, resource, params):
-    if req.method in ('POST', 'PUT'):
-        if 'application/json' not in req.content_type:
+    if req.method in ('POST', 'PUT', 'PATCH'):
+        if req.content_type is None or 'application/json' not in req.content_type:
             raise falcon.HTTPUnsupportedMediaType(
                 'This API only supports requests encoded as JSON.',
                 href='http://docs.examples.com/api/json')
@@ -15,7 +15,7 @@ def require_json(req, resp, resource, params):
 
 def parse_json(req, resp, resource, params):
     # if not json data, do nothing
-    if 'application/json' not in req.content_type:
+    if req.content_type is None or 'application/json' not in req.content_type:
         return
 
     # req.stream corresponds to the WSGI wsgi.input environ variable,
