@@ -1,11 +1,10 @@
-from typing import Union, List, Dict, Any
-
 import falcon
-from falcon import Request, Response
 import rethinkdb as r
-from .util import RethinkDBMixin, parse_rethinkdb_url
+from falcon import Request, Response
+
 from . import hooks
 from .types import JSONType
+from .util import RethinkDBMixin, parse_rethinkdb_url
 
 
 def _put_json(req: Request, item: JSONType):
